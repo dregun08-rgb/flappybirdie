@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Birdie — Tap. Fly. Survive.</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --gold: #FFD600;
+    --orange: #FF8F00;
+    --dark: #06060f;
+    --card: #0d0d1e;
+    --border: #1a1a33;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--dark);
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(6,6,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+  }
+  .nav-logo { font-size: 22px; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: #aaa; text-decoration: none; font-size: 14px; transition: color .2s; }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    background: var(--gold); color: #000; font-weight: 700;
+    padding: 9px 20px; border-radius: 8px; text-decoration: none;
+    font-size: 14px; transition: background .2s;
+  }
+  .nav-cta:hover { background: #FFC400; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 60% 40%, rgba(255,214,0,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(255,143,0,0.05) 0%, transparent 50%);
+  }
+  .hero-bird { font-size: 96px; margin-bottom: 24px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+  .hero h1 {
+    font-size: clamp(52px, 10vw, 96px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .hero h1 span { color: var(--gold); }
+  .hero-sub {
+    font-size: clamp(18px, 3vw, 26px);
+    color: #888;
+    margin: 16px 0 40px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .hero-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .btn-primary {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--gold); color: #000; font-weight: 800;
+    padding: 16px 36px; border-radius: 12px; text-decoration: none;
+    font-size: 18px; transition: transform .2s, background .2s;
+  }
+  .btn-primary:hover { background: #FFC400; transform: scale(1.04); }
+  .btn-secondary {
+    display: flex; align-items: center; gap: 10px;
+    background: transparent; color: #fff; font-weight: 600;
+    padding: 16px 36px; border-radius: 12px; text-decoration: none;
+    font-size: 18px; border: 2px solid var(--border);
+    transition: border-color .2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); }
+  .hero-scroll { margin-top: 60px; color: #333; font-size: 13px; letter-spacing: 2px; animation: bounce 2s infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+  /* ── SECTION BASE ── */
+  section { padding: 100px 24px; }
+  .section-label { font-size: 12px; color: var(--gold); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; }
+  .section-title { font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+  .section-sub { font-size: 18px; color: #777; max-width: 560px; line-height: 1.6; }
+  .center { text-align: center; }
+  .center .section-sub { margin: 0 auto; }
+
+  /* ── FEATURES ── */
+  .features { background: #08080f; }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 60px auto 0;
+  }
+  .feat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: border-color .2s, transform .2s;
+  }
+  .feat-card:hover { border-color: var(--gold); transform: translateY(-4px); }
+  .feat-icon { font-size: 40px; margin-bottom: 16px; }
+  .feat-card h3 { font-size: 20px; margin-bottom: 10px; color: #fff; }
+  .feat-card p { font-size: 15px; color: #777; line-height: 1.6; }
+
+  /* ── HOW IT WORKS ── */
+  .steps { max-width: 800px; margin: 60px auto 0; }
+  .step {
+    display: flex; gap: 24px; align-items: flex-start;
+    margin-bottom: 48px;
+  }
+  .step-num {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    background: var(--gold); color: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 900;
+  }
+  .step-body h3 { font-size: 22px; margin-bottom: 8px; }
+  .step-body p { color: #777; font-size: 16px; line-height: 1.6; }
+
+  /* ── SKINS ── */
+  .skins-section { background: #08080f; }
+  .skins-grid {
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    margin-top: 60px;
+  }
+  .skin-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    text-align: center;
+    width: 160px;
+    transition: transform .2s, border-color .2s;
+    cursor: default;
+  }
+  .skin-card:hover { transform: scale(1.08); }
+  .skin-card.yellow:hover { border-color: #FDD835; }
+  .skin-card.red:hover    { border-color: #EF5350; }
+  .skin-card.blue:hover   { border-color: #29B6F6; }
+  .skin-card.green:hover  { border-color: #66BB6A; }
+  .skin-card.pink:hover   { border-color: #F48FB1; }
+  .skin-emoji { font-size: 52px; display: block; margin-bottom: 12px; }
+  .skin-name { font-size: 15px; font-weight: 700; }
+  .skin-card.yellow .skin-name { color: #FDD835; }
+  .skin-card.red    .skin-name { color: #EF5350; }
+  .skin-card.blue   .skin-name { color: #29B6F6; }
+  .skin-card.green  .skin-name { color: #66BB6A; }
+  .skin-card.pink   .skin-name { color: #F48FB1; }
+
+  /* ── DIFFICULTY ── */
+  .diff-bars { max-width: 600px; margin: 50px auto 0; }
+  .diff-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .diff-label { width: 100px; font-size: 14px; color: #888; text-align: right; flex-shrink: 0; }
+  .diff-track { flex: 1; background: #111; border-radius: 99px; height: 10px; overflow: hidden; }
+  .diff-fill { height: 100%; border-radius: 99px; }
+  .diff-score { width: 60px; font-size: 13px; color: #555; }
+
+  /* ── CTA ── */
+  .cta-section {
+    text-align: center;
+    background: linear-gradient(135deg, #0d0d1e, #06060f);
+    border-top: 1px solid var(--border);
+  }
+  .cta-section h2 { font-size: clamp(36px,6vw,64px); font-weight: 900; margin-bottom: 16px; }
+  .cta-section h2 span { color: var(--gold); }
+  .cta-section p { color: #666; font-size: 18px; margin-bottom: 40px; }
+  .app-badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: #000; border: 2px solid #333;
+    border-radius: 14px; padding: 14px 28px;
+    text-decoration: none; transition: border-color .2s;
+  }
+  .app-badge:hover { border-color: var(--gold); }
+  .app-badge-icon { font-size: 36px; }
+  .app-badge-text { text-align: left; }
+  .app-badge-text small { display: block; color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .app-badge-text strong { display: block; color: #fff; font-size: 20px; font-weight: 700; }
+
+  /* ── SUPPORT ── */
+  .support-section { background: #08080f; }
+  .support-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px; max-width: 900px; margin: 50px auto 0;
+  }
+  .support-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px;
+  }
+  .support-card h3 { font-size: 18px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; }
+  .support-card p { color: #777; font-size: 15px; line-height: 1.6; margin-bottom: 4px; }
+  .support-card ul { color: #777; font-size: 15px; line-height: 1.8; padding-left: 18px; }
+  .contact-link {
+    display: inline-block; margin-top: 12px;
+    color: var(--gold); font-weight: 600; text-decoration: none; font-size: 15px;
+  }
+  .contact-link:hover { text-decoration: underline; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #04040a;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 40px 24px;
+    color: #333;
+    font-size: 13px;
+  }
+  footer a { color: #555; text-decoration: none; }
+  footer a:hover { color: var(--gold); }
+  .footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    nav { padding: 12px 16px; }
+    .nav-links { display: none; }
+    .step { flex-direction: column; }
+    .diff-label { width: 70px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🐦 FLAPPY BIRDIE</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How to Play</a>
+    <a href="#skins">Bird Skins</a>
+    <a href="#support">Support</a>
+  </div>
+  <a class="nav-cta" href="#download">Download Free</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-bird">🐦</div>
+  <h1><span>FLAPPY</span><br>BIRDIE</h1>
+  <p class="hero-sub">Tap · Fly · Survive</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="#download">
+      <span>🍎</span> Download on iOS
+    </a>
+    <a class="btn-secondary" href="#how">
+      <span>▶</span> How to Play
+    </a>
+  </div>
+  <p class="hero-scroll">▼ &nbsp; SCROLL TO EXPLORE &nbsp; ▼</p>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="center">
+      <p class="section-label">Why You'll Love It</p>
+      <h2 class="section-title">Simple to Learn.<br>Impossible to Master.</h2>
+      <p class="section-sub">One tap. Infinite challenge. The most addictive 30 seconds of your day.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">👆</div>
+        <h3>One-Tap Control</h3>
+        <p>Tap to flap. No tutorials needed. Pick up and play in seconds — but mastering it takes forever.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Speed Boost</h3>
+        <p>Double-tap for a golden boost. Fly faster, score bigger, impress nobody (but yourself).</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⏸</div>
+        <h3>Pause Anytime</h3>
+        <p>Life calls. Hit pause and come back to your exact position. Your score stays safe.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <h3>Dynamic Difficulty</h3>
+        <p>Starts easy, gets brutal. The gap shrinks and speed rises the higher you score. No ceiling.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎨</div>
+        <h3>5 Bird Skins</h3>
+        <p>Yellow, Red, Blue, Green, or Pink. Swap your look anytime. Same bird, different vibe.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🆓</div>
+        <h3>Free to Play</h3>
+        <p>Completely free. No pay-to-win. No subscriptions. Just you, the bird, and the pipes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW TO PLAY -->
+<section id="how">
+  <div style="max-width:900px;margin:0 auto;">
+    <div class="center">
+      <p class="section-label">Getting Started</p>
+      <h2 class="section-title">How to Play</h2>
+      <p class="section-sub">Three moves. Endless possibilities.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Tap to Flap 🐦</h3>
+          <p>Each tap makes your bird flap upward. Release and gravity pulls you down. Time your taps to thread through the gaps between pipes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Double-Tap to Boost ⚡</h3>
+          <p>Tap twice in quick succession to trigger a Speed Boost. Your bird glows gold and surges forward. Use it for those tricky tight gaps.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Pause When You Need To ⏸</h3>
+          <p>Tap the pause button (top-right corner) anytime during gameplay to freeze the action. Tap again to resume exactly where you left off.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Beat Your Best Score 🏆</h3>
+          <p>Every pipe you clear is worth 1 point. The difficulty ramps up continuously — how long can you survive before the gap becomes impossible?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKINS -->
+<section class="skins-section" id="skins">
+  <div class="center">
+    <p class="section-label">Customize Your Bird</p>
+    <h2 class="section-title">5 Bird Skins</h2>
+    <p class="section-sub center">Same challenge, different style. Pick your favorite color and fly.</p>
+    <div class="skins-grid">
+      <div class="skin-card yellow">
+        <span class="skin-emoji">🐦</span>
+        <div class="skin-name">YELLOW</div>
+      </div>
+      <div class="skin-card red">
+        <span class="skin-emoji">🔴</span>
+        <div class="skin-name">RED</div>
+      </div>
+      <div class="skin-card blue">
+        <span class="skin-emoji">🔵</span>
+        <div class="skin-name">BLUE</div>
+      </div>
+      <div class="skin-card green">
+        <span class="skin-emoji">🟢</span>
+        <div class="skin-name">GREEN</div>
+      </div>
+      <div class="skin-card pink">
+        <span class="skin-emoji">🌸</span>
+        <div class="skin-name">PINK</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFFICULTY -->
+<section id="difficulty">
+  <div style="max-width:700px;margin:0 auto;">
+    <div class="center">
+      <p class="section-label">The Challenge</p>
+      <h2 class="section-title">It Only Gets Harder</h2>
+      <p class="section-sub center">The higher your score, the more brutal it gets. Are you ready?</p>
+    </div>
+    <div class="diff-bars">
+      <div class="diff-row">
+        <div class="diff-label">Score 0–5</div>
+        <div class="diff-track"><div class="diff-fill" style="width:20%;background:linear-gradient(90deg,#4CAF50,#8BC34A)"></div></div>
+        <div class="diff-score">Easy</div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-label">Score 5–15</div>
+        <div class="diff-track"><div class="diff-fill" style="width:45%;background:linear-gradient(90deg,#8BC34A,#FDD835)"></div></div>
+        <div class="diff-score">Medium</div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-label">Score 15–25</div>
+        <div class="diff-track"><div class="diff-fill" style="width:72%;background:linear-gradient(90deg,#FDD835,#FF9800)"></div></div>
+        <div class="diff-score">Hard</div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-label">Score 25+</div>
+        <div class="diff-track"><div class="diff-fill" style="width:100%;background:linear-gradient(90deg,#FF5722,#9C27B0)"></div></div>
+        <div class="diff-score">Brutal</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD CTA -->
+<section class="cta-section" id="download">
+  <p class="section-label center">Available Now</p>
+  <h2><span>Download</span> Flappy Birdie</h2>
+  <p>Free on the App Store. No sign-up. No nonsense. Just tap and fly.</p>
+  <a class="app-badge" href="#">
+    <span class="app-badge-icon">🍎</span>
+    <div class="app-badge-text">
+      <small>Download on the</small>
+      <strong>App Store</strong>
+    </div>
+  </a>
+  <br><br>
+  <p style="color:#333;font-size:13px;">iOS 16.0 or later required · Free · Ad Supported</p>
+</section>
+
+<!-- SUPPORT -->
+<section class="support-section" id="support">
+  <div style="max-width:900px;margin:0 auto;">
+    <div class="center">
+      <p class="section-label">Help & Support</p>
+      <h2 class="section-title">We've Got You</h2>
+      <p class="section-sub center">Everything you need to know about Flappy Birdie.</p>
+    </div>
+    <div class="support-grid">
+      <div class="support-card">
+        <h3>❓ FAQ</h3>
+        <ul>
+          <li>Tap = flap upward</li>
+          <li>Double-tap = speed boost</li>
+          <li>⏸ button = pause/resume</li>
+          <li>High score saved locally</li>
+          <li>5 bird skins to choose from</li>
+          <li>Difficulty increases with score</li>
+        </ul>
+      </div>
+      <div class="support-card">
+        <h3>🔒 Privacy</h3>
+        <p>Flappy Birdie collects no personal data. Your high score is stored on your device only. We use no analytics, tracking, or third-party data services.</p>
+      </div>
+      <div class="support-card">
+        <h3>🐛 Report a Bug</h3>
+        <p>Found an issue? We want to hear about it. Email us and we'll fix it in the next update.</p>
+        <a class="contact-link" href="mailto:support@wowstudios.dev">support@wowstudios.dev</a>
+      </div>
+      <div class="support-card">
+        <h3>📢 Advertising</h3>
+        <p>Interested in placing an ad in Flappy Birdie? We offer a 360×60 in-app banner slot. Get in touch to discuss rates and availability.</p>
+        <a class="contact-link" href="mailto:ads@wowstudios.dev">ads@wowstudios.dev</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="#home">Home</a>
+    <a href="#features">Features</a>
+    <a href="#how">How to Play</a>
+    <a href="#skins">Skins</a>
+    <a href="#support">Support</a>
+    <a href="mailto:support@wowstudios.dev">Contact</a>
+  </div>
+  <p>© 2026 WOW Studios · Flappy Birdie v1.0 · All rights reserved</p>
+  <p style="margin-top:8px;">Made with ❤️ for iOS</p>
+</footer>
+
+</body>
+</html>
